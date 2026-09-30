@@ -1,0 +1,847 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<title>Les Connexions de Voltz</title>
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<meta name="apple-mobile-web-app-title" content="Voltz">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#1C2321">
+<link rel="apple-touch-icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%231C2321'/%3E%3Ctext x='50' y='68' font-size='54' font-family='Georgia,serif' fill='%23D9A441' text-anchor='middle'%3EV%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;0,9..144,700;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --ink:#1C2321;
+    --ink-2:#242B27;
+    --ink-3:#2D352F;
+    --paper:#EDEAE0;
+    --paper-2:#F6F3EA;
+    --mustard:#D9A441;
+    --mustard-dim:#B98B34;
+    --teal:#3A6B6B;
+    --teal-dim:#2C5252;
+    --rust:#B85C38;
+    --text-dark:#22271F;
+    --text-muted:#6B6A5E;
+    --line:#D8D2BF;
+    --line-dark:#3A423C;
+  }
+  *{box-sizing:border-box; margin:0; padding:0;}
+  html,body{height:100%;}
+  body{
+    font-family:'IBM Plex Sans', sans-serif;
+    background: var(--ink);
+    color: var(--paper);
+    overflow-x:hidden;
+    -webkit-font-smoothing:antialiased;
+  }
+  #app{
+    max-width:520px;
+    margin:0 auto;
+    min-height:100vh;
+    display:flex;
+    flex-direction:column;
+    position:relative;
+    background: var(--ink);
+  }
+
+  /* ---------- Header ---------- */
+  .app-header{
+    padding: 22px 20px 14px;
+    position:sticky; top:0; z-index:20;
+    background: linear-gradient(180deg, var(--ink) 70%, rgba(28,35,33,0.96));
+    border-bottom:1px solid var(--line-dark);
+  }
+  .brand-row{ display:flex; align-items:baseline; justify-content:space-between; margin-bottom:14px;}
+  .brand{
+    font-family:'Fraunces', serif;
+    font-weight:700;
+    font-size:22px;
+    line-height:1.15;
+    letter-spacing:-0.01em;
+    color: var(--paper);
+  }
+  .brand span{ color: var(--mustard); }
+  .brand-tag{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:10.5px;
+    letter-spacing:0.08em;
+    text-transform:uppercase;
+    color: var(--text-muted);
+  }
+  .search-wrap{
+    display:flex; align-items:center; gap:8px;
+    background: var(--ink-2);
+    border:1px solid var(--line-dark);
+    border-radius:10px;
+    padding:10px 12px;
+  }
+  .search-wrap svg{ flex-shrink:0; opacity:0.55; }
+  .search-wrap input{
+    flex:1; background:none; border:none; outline:none;
+    color: var(--paper); font-family:'IBM Plex Sans', sans-serif; font-size:14.5px;
+  }
+  .search-wrap input::placeholder{ color: var(--text-muted); }
+
+  .chip-row{
+    display:flex; gap:7px; overflow-x:auto; padding:14px 20px 0;
+    scrollbar-width:none;
+  }
+  .chip-row::-webkit-scrollbar{ display:none; }
+  .chip{
+    flex-shrink:0;
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11.5px;
+    letter-spacing:0.03em;
+    padding:6px 12px;
+    border-radius:999px;
+    border:1px solid var(--line-dark);
+    background: var(--ink-2);
+    color: var(--paper);
+    cursor:pointer;
+    white-space:nowrap;
+    transition: all .15s ease;
+    user-select:none;
+  }
+  .chip.active{ background: var(--mustard); border-color: var(--mustard); color: var(--ink); font-weight:600; }
+  .chip.fav-chip.active{ background: var(--rust); border-color: var(--rust); color: var(--paper); }
+
+  /* ---------- Main content ---------- */
+  .content{ flex:1; padding: 18px 20px 100px; }
+  .section-label{
+    font-family:'IBM Plex Mono', monospace;
+    font-size:11px; letter-spacing:0.1em; text-transform:uppercase;
+    color: var(--text-muted); margin-bottom:12px; display:flex; justify-content:space-between; align-items:center;
+  }
+
+  /* ---------- Grid of index cards ---------- */
+  .grid{
+    display:grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap:16px 12px;
+  }
+  .card{
+    position:relative;
+    background: var(--paper);
+    border-radius:3px 3px 8px 8px;
+    padding:16px 12px 12px;
+    color: var(--text-dark);
+    cursor:pointer;
+    box-shadow: 0 1px 0 rgba(0,0,0,0.05), 0 6px 14px rgba(0,0,0,0.28);
+    transition: transform .18s ease, box-shadow .18s ease;
+    min-height:132px;
+    display:flex; flex-direction:column;
+  }
+  .card:nth-child(odd){ transform: rotate(-0.6deg); }
+  .card:nth-child(even){ transform: rotate(0.6deg); }
+  .card:active{ transform: scale(0.97) rotate(0deg); }
+  .card-tab{
+    position:absolute; top:-9px; left:14px;
+    width:28px; height:16px;
+    border-radius:4px 4px 0 0;
+    background: var(--teal);
+    color: var(--paper-2);
+    font-family:'Fraunces', serif; font-weight:600; font-size:12px;
+    display:flex; align-items:center; justify-content:center;
+  }
+  .card-fav{
+    position:absolute; top:10px; right:10px; font-size:14px; color: var(--rust);
+  }
+  .card-photo-row{ display:flex; align-items:center; gap:8px; margin-bottom:8px; }
+  .card-avatar-img{
+    width:38px; height:38px; border-radius:9px; object-fit:cover; flex-shrink:0;
+    border:1px solid rgba(0,0,0,0.08);
+  }
+  .card-avatar-fallback{
+    width:38px; height:38px; border-radius:9px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-family:'Fraunces', serif; font-weight:700; font-size:13px;
+  }
+  .card-name{
+    font-family:'Fraunces', serif; font-weight:600; font-size:16px;
+    line-height:1.2; margin-bottom:6px; padding-right:16px;
+  }
+  .card-sub{
+    font-family:'IBM Plex Mono', monospace; font-size:10.5px; color: var(--text-muted);
+    margin-bottom:auto; padding-bottom:8px;
+  }
+  .card-tags{ display:flex; flex-wrap:wrap; gap:4px; margin-top:6px; }
+  .tag-pill{
+    font-family:'IBM Plex Mono', monospace; font-size:9.5px; letter-spacing:0.02em;
+    padding:2px 7px; border-radius:999px; color:#fff;
+  }
+
+  .empty-state{
+    text-align:center; padding:60px 20px; color: var(--text-muted);
+  }
+  .empty-state .ico{ font-size:34px; margin-bottom:10px; opacity:0.7; }
+  .empty-state h3{ font-family:'Fraunces', serif; font-size:18px; color: var(--paper); margin-bottom:6px; font-weight:600; }
+  .empty-state p{ font-size:13px; max-width:280px; margin:0 auto; line-height:1.5; }
+
+  /* ---------- Bottom nav ---------- */
+  .bottom-nav{
+    position:fixed; bottom:0; left:50%; transform:translateX(-50%);
+    width:100%; max-width:520px;
+    background: var(--ink-2);
+    border-top:1px solid var(--line-dark);
+    display:flex; justify-content:space-around; align-items:center;
+    padding: 10px 20px calc(10px + env(safe-area-inset-bottom));
+    z-index:30;
+  }
+  .nav-btn{
+    background:none; border:none; color: var(--text-muted);
+    display:flex; flex-direction:column; align-items:center; gap:3px;
+    font-family:'IBM Plex Mono', monospace; font-size:10px; letter-spacing:0.05em;
+    cursor:pointer; padding:4px 14px; text-transform:uppercase;
+  }
+  .nav-btn.active{ color: var(--mustard); }
+  .nav-btn svg{ opacity:0.9; }
+
+  .fab{
+    position:fixed; bottom:78px; right:calc(50% - 260px + 20px);
+    width:54px; height:54px; border-radius:50%;
+    background: var(--mustard); color: var(--ink);
+    border:none; font-size:26px; font-weight:600;
+    display:flex; align-items:center; justify-content:center;
+    box-shadow: 0 6px 18px rgba(217,164,65,0.4);
+    cursor:pointer; z-index:25;
+    transition: transform .15s ease;
+  }
+  .fab:active{ transform: scale(0.92); }
+  @media (max-width: 559px){
+    .fab{ right:20px; }
+  }
+
+  /* ---------- Overlay panels ---------- */
+  .overlay{
+    position:fixed; inset:0; background: var(--ink);
+    z-index:50; overflow-y:auto;
+    display:none;
+    max-width:520px; margin:0 auto;
+  }
+  .overlay.open{ display:block; animation: slideUp .22s ease; }
+  @keyframes slideUp{ from{ transform:translateY(14px); opacity:0;} to{ transform:translateY(0); opacity:1;} }
+  .overlay-header{
+    position:sticky; top:0; background: var(--ink);
+    border-bottom:1px solid var(--line-dark);
+    padding:18px 20px; display:flex; align-items:center; gap:12px; z-index:5;
+  }
+  .icon-btn{
+    background: var(--ink-2); border:1px solid var(--line-dark); color: var(--paper);
+    width:34px; height:34px; border-radius:8px; display:flex; align-items:center; justify-content:center;
+    cursor:pointer; flex-shrink:0;
+  }
+  .overlay-title{ font-family:'Fraunces', serif; font-weight:600; font-size:17px; flex:1; }
+  .overlay-body{ padding:22px 20px 60px; }
+
+  /* Detail view */
+  .detail-avatar{
+    width:74px; height:74px; border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:'Fraunces', serif; font-weight:700; font-size:28px; color:#fff;
+    margin-bottom:16px;
+    object-fit:cover;
+  }
+  .photo-upload-row{ display:flex; align-items:center; gap:14px; }
+  .photo-preview{
+    width:64px; height:64px; border-radius:12px; object-fit:cover; flex-shrink:0;
+    border:1px solid var(--line-dark); background: var(--ink-2);
+  }
+  .photo-preview-fallback{
+    width:64px; height:64px; border-radius:12px; flex-shrink:0;
+    display:flex; align-items:center; justify-content:center; color:#fff;
+    font-family:'Fraunces', serif; font-weight:700; font-size:20px;
+  }
+  .photo-btns{ display:flex; flex-direction:column; gap:6px; }
+  .photo-file-label{
+    font-family:'IBM Plex Mono', monospace; font-size:11.5px; color: var(--teal);
+    border:1px dashed var(--line-dark); border-radius:8px; padding:8px 12px; cursor:pointer; text-align:center;
+  }
+  .photo-remove-btn{
+    font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--rust);
+    background:none; border:none; cursor:pointer; text-align:left; padding:2px 4px;
+  }
+  .required-star{ color: var(--rust); }
+  .detail-name{ font-family:'Fraunces', serif; font-size:26px; font-weight:700; margin-bottom:4px; }
+  .detail-meta{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--text-muted); margin-bottom:16px; }
+  .detail-tags{ display:flex; flex-wrap:wrap; gap:6px; margin-bottom:24px; }
+  .detail-description{ font-size:14.5px; line-height:1.55; color: var(--paper); background: var(--ink-2); border:1px solid var(--line-dark); border-radius:10px; padding:14px; margin-bottom:20px; }
+  .contact-row{ display:flex; flex-direction:column; gap:10px; margin-bottom:20px; }
+  .contact-item{ display:flex; align-items:center; gap:10px; font-size:14px; color: var(--paper); }
+  .contact-item .ci-label{ font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.06em; color: var(--text-muted); width:64px; flex-shrink:0; }
+  .field-list{ display:flex; flex-direction:column; gap:14px; margin-bottom:24px; }
+  .field-item{ border-bottom:1px solid var(--line-dark); padding-bottom:12px; }
+  .field-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color: var(--mustard); margin-bottom:4px; }
+  .field-value{ font-size:15px; color: var(--paper); line-height:1.4; }
+  .detail-actions{ display:flex; gap:10px; margin-top:10px; }
+  .btn{
+    flex:1; padding:12px; border-radius:9px; border:none; font-family:'IBM Plex Sans', sans-serif;
+    font-weight:600; font-size:14px; cursor:pointer; display:flex; align-items:center; justify-content:center; gap:6px;
+  }
+  .btn-primary{ background: var(--mustard); color: var(--ink); }
+  .btn-outline{ background:transparent; border:1px solid var(--line-dark); color: var(--paper); }
+  .btn-danger{ background:transparent; border:1px solid var(--rust); color: var(--rust); }
+
+  /* Form */
+  .form-group{ margin-bottom:18px; }
+  .form-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.08em; color: var(--text-muted); margin-bottom:7px; display:block; }
+  .form-input, .form-textarea{
+    width:100%; background: var(--ink-2); border:1px solid var(--line-dark); border-radius:9px;
+    padding:12px 13px; color: var(--paper); font-family:'IBM Plex Sans', sans-serif; font-size:14.5px; outline:none;
+  }
+  .form-input:focus, .form-textarea:focus{ border-color: var(--mustard); }
+  .form-textarea{ resize:vertical; min-height:60px; }
+  .field-row{ display:flex; gap:8px; margin-bottom:9px; align-items:center; }
+  .field-row input{ flex:1; }
+  .field-row .rm-field{ background:none; border:none; color: var(--rust); font-size:20px; cursor:pointer; width:30px; flex-shrink:0; }
+  .add-field-btn{
+    font-family:'IBM Plex Mono', monospace; font-size:12px; color: var(--teal); background:none; border:1px dashed var(--line-dark);
+    border-radius:8px; padding:9px; width:100%; cursor:pointer; margin-top:4px;
+  }
+  .fav-toggle{
+    display:flex; align-items:center; justify-content:space-between; background: var(--ink-2);
+    border:1px solid var(--line-dark); border-radius:9px; padding:12px 14px; cursor:pointer;
+  }
+  .switch{ width:38px; height:22px; border-radius:999px; background: var(--line-dark); position:relative; transition:.2s; flex-shrink:0; }
+  .switch.on{ background: var(--rust); }
+  .switch::after{ content:''; position:absolute; top:2px; left:2px; width:18px; height:18px; border-radius:50%; background:#fff; transition:.2s; }
+  .switch.on::after{ transform:translateX(16px); }
+  .tag-input-row{ display:flex; flex-wrap:wrap; gap:6px; background: var(--ink-2); border:1px solid var(--line-dark); border-radius:9px; padding:9px 10px; }
+  .tag-input-row input{ flex:1; min-width:80px; background:none; border:none; outline:none; color:var(--paper); font-family:'IBM Plex Sans',sans-serif; font-size:13.5px; padding:4px 0; }
+  .tag-chip-editable{ display:flex; align-items:center; gap:5px; font-family:'IBM Plex Mono',monospace; font-size:11px; padding:4px 8px; border-radius:999px; color:#fff; }
+  .tag-chip-editable button{ background:none; border:none; color:#fff; opacity:0.75; cursor:pointer; font-size:12px; line-height:1; }
+
+  /* Stats */
+  .stat-cards{ display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:26px; }
+  .stat-card{ background: var(--ink-2); border:1px solid var(--line-dark); border-radius:12px; padding:16px; }
+  .stat-num{ font-family:'Fraunces', serif; font-size:32px; font-weight:700; color: var(--mustard); }
+  .stat-label{ font-family:'IBM Plex Mono', monospace; font-size:10.5px; text-transform:uppercase; letter-spacing:0.06em; color: var(--text-muted); margin-top:2px; }
+  .bar-row{ margin-bottom:12px; }
+  .bar-top{ display:flex; justify-content:space-between; font-size:12.5px; margin-bottom:5px; }
+  .bar-top .tname{ font-family:'IBM Plex Mono', monospace; }
+  .bar-track{ height:8px; border-radius:5px; background: var(--ink-2); overflow:hidden; }
+  .bar-fill{ height:100%; border-radius:5px; }
+
+  .loading-screen{
+    position:fixed; inset:0; display:flex; align-items:center; justify-content:center;
+    flex-direction:column; gap:10px; background: var(--ink); z-index:100;
+  }
+  .loading-screen .mark{ font-family:'Fraunces', serif; font-size:22px; color: var(--mustard); }
+  .loading-screen .sub{ font-family:'IBM Plex Mono', monospace; font-size:11px; color: var(--text-muted); }
+</style>
+</head>
+<body>
+
+<div id="app">
+  <div class="app-header">
+    <div class="brand-row">
+      <div>
+        <div class="brand">Les Connexions <span>de Voltz</span></div>
+        <div class="brand-tag">your personal campus index</div>
+      </div>
+    </div>
+    <div class="search-wrap">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="#EDEAE0" stroke-width="2"><circle cx="11" cy="11" r="7"/><line x1="21" y1="21" x2="16.65" y2="16.65"/></svg>
+      <input id="searchInput" placeholder="Search people, tags, notes…" oninput="onSearch()">
+    </div>
+    <div class="chip-row" id="chipRow"></div>
+  </div>
+
+  <div class="content" id="content"></div>
+
+  <button class="fab" id="fabBtn" onclick="openForm()">+</button>
+
+  <div class="bottom-nav">
+    <button class="nav-btn active" id="navDir" onclick="switchView('directory')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7" rx="1"/><rect x="14" y="3" width="7" height="7" rx="1"/><rect x="3" y="14" width="7" height="7" rx="1"/><rect x="14" y="14" width="7" height="7" rx="1"/></svg>
+      Directory
+    </button>
+    <button class="nav-btn" id="navFav" onclick="switchView('favorites')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"/></svg>
+      Favorites
+    </button>
+    <button class="nav-btn" id="navStats" onclick="switchView('stats')">
+      <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+      Stats
+    </button>
+  </div>
+</div>
+
+<!-- Detail overlay -->
+<div class="overlay" id="detailOverlay">
+  <div class="overlay-header">
+    <button class="icon-btn" onclick="closeOverlay('detailOverlay')">←</button>
+    <div class="overlay-title">Profile</div>
+  </div>
+  <div class="overlay-body" id="detailBody"></div>
+</div>
+
+<!-- Form overlay -->
+<div class="overlay" id="formOverlay">
+  <div class="overlay-header">
+    <button class="icon-btn" onclick="closeOverlay('formOverlay')">←</button>
+    <div class="overlay-title" id="formTitle">Add Person</div>
+  </div>
+  <div class="overlay-body" id="formBody"></div>
+</div>
+
+<div class="loading-screen" id="loadingScreen">
+  <div class="mark">Les Connexions de Voltz</div>
+  <div class="sub">opening your index…</div>
+</div>
+
+<script>
+// ---------- State ----------
+let profiles = [];
+let currentView = 'directory';
+let activeTags = new Set();
+let searchQuery = '';
+let editingId = null;
+let draftFields = [];
+let draftTags = [];
+let draftPhoto = null;
+
+const TAG_PALETTE = ['#3A6B6B','#D9A441','#B85C38','#6B7FB8','#8A6BB8','#4E9A6E','#B85C8A','#5B8A9E'];
+function tagColor(tag){
+  let h = 0;
+  for(let i=0;i<tag.length;i++){ h = tag.charCodeAt(i) + ((h<<5)-h); }
+  return TAG_PALETTE[Math.abs(h) % TAG_PALETTE.length];
+}
+function initials(name){
+  return name.trim().split(/\s+/).map(w=>w[0]).slice(0,2).join('').toUpperCase() || '?';
+}
+function avatarColor(name){
+  let h=0; for(let i=0;i<name.length;i++){ h = name.charCodeAt(i) + ((h<<5)-h); }
+  const hue = Math.abs(h) % 360;
+  return `hsl(${hue}, 38%, 40%)`;
+}
+function uid(){ return 'p_' + Date.now() + '_' + Math.random().toString(36).slice(2,8); }
+
+// ---------- Storage (browser localStorage — persists on this device/browser only) ----------
+const STORAGE_KEY = 'voltz-profiles-data';
+function loadData(){
+  try{
+    const raw = localStorage.getItem(STORAGE_KEY);
+    profiles = raw ? JSON.parse(raw) : [];
+  }catch(e){
+    profiles = [];
+  }
+  document.getElementById('loadingScreen').style.display = 'none';
+  render();
+}
+function saveData(){
+  try{
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(profiles));
+  }catch(e){
+    console.error('Save failed', e);
+    alert('Could not save — your browser storage may be full (this can happen with many uploaded photos). Try removing a photo or two.');
+  }
+}
+
+// ---------- Derived data ----------
+function allTags(){
+  const set = new Set();
+  profiles.forEach(p => (p.tags||[]).forEach(t => set.add(t)));
+  return Array.from(set).sort();
+}
+function filteredProfiles(){
+  let list = profiles;
+  if(currentView === 'favorites') list = list.filter(p => p.favorite);
+  if(activeTags.size) list = list.filter(p => (p.tags||[]).some(t => activeTags.has(t)));
+  if(searchQuery.trim()){
+    const q = searchQuery.toLowerCase();
+    list = list.filter(p=>{
+      if(p.name.toLowerCase().includes(q)) return true;
+      if((p.tags||[]).some(t=>t.toLowerCase().includes(q))) return true;
+      if((p.fields||[]).some(f=> (f.label+' '+f.value).toLowerCase().includes(q))) return true;
+      return false;
+    });
+  }
+  return list.slice().sort((a,b)=> (b.favorite - a.favorite) || a.name.localeCompare(b.name));
+}
+
+// ---------- View switching ----------
+function switchView(v){
+  currentView = v;
+  document.getElementById('navDir').classList.toggle('active', v==='directory');
+  document.getElementById('navFav').classList.toggle('active', v==='favorites');
+  document.getElementById('navStats').classList.toggle('active', v==='stats');
+  document.getElementById('fabBtn').style.display = (v==='directory' || v==='favorites') ? 'flex' : 'none';
+  render();
+}
+function onSearch(){ searchQuery = document.getElementById('searchInput').value; renderDirectory(); }
+
+// ---------- Render ----------
+function render(){
+  renderChips();
+  if(currentView==='directory' || currentView==='favorites') renderDirectory();
+  else renderStats();
+}
+
+function renderChips(){
+  const row = document.getElementById('chipRow');
+  const tags = allTags();
+  row.innerHTML = tags.map(t=>
+    `<div class="chip ${activeTags.has(t)?'active':''}" onclick="toggleTag('${t.replace(/'/g,"\\'")}')">${escapeHtml(t)}</div>`
+  ).join('');
+  row.style.display = (currentView==='directory' || currentView==='favorites') ? 'flex' : 'none';
+}
+function toggleTag(t){ activeTags.has(t) ? activeTags.delete(t) : activeTags.add(t); render(); }
+
+function renderDirectory(){
+  const content = document.getElementById('content');
+  const list = filteredProfiles();
+  if(currentView==='favorites' && profiles.filter(p=>p.favorite).length === 0){
+    content.innerHTML = `<div class="empty-state">
+      <div class="ico">★</div>
+      <h3>No favorites yet</h3>
+      <p>Open a profile and tap "Favorite" to pin the people you want to find quickly.</p>
+    </div>`;
+    return;
+  }
+  if(profiles.length === 0){
+    content.innerHTML = `<div class="empty-state">
+      <div class="ico">🗂️</div>
+      <h3>Your index is empty</h3>
+      <p>Tap the + button to add the first person you want to remember — a classmate, a hostel neighbor, anyone.</p>
+    </div>`;
+    return;
+  }
+  if(list.length === 0){
+    content.innerHTML = `<div class="empty-state">
+      <div class="ico">🔎</div>
+      <h3>No matches</h3>
+      <p>Nobody fits that search or filter combo. Try clearing a tag or the search box.</p>
+    </div>`;
+    return;
+  }
+  content.innerHTML = `<div class="grid">${list.map(cardHtml).join('')}</div>`;
+}
+
+function cardHtml(p){
+  const tags = (p.tags||[]).slice(0,3);
+  const avatarHtml = p.photo
+    ? `<img class="card-avatar-img" src="${p.photo}" alt="">`
+    : `<div class="card-avatar-fallback" style="background:${avatarColor(p.name)}">${initials(p.name)}</div>`;
+  return `<div class="card" onclick="openDetail('${p.id}')">
+    <div class="card-tab">${initials(p.name)[0]||'?'}</div>
+    ${p.favorite ? '<div class="card-fav">★</div>' : ''}
+    <div class="card-photo-row">${avatarHtml}<div class="card-name" style="margin-bottom:0; padding-right:0;">${escapeHtml(p.name)}</div></div>
+    <div class="card-sub">${escapeHtml(p.branch)} · ${escapeHtml(p.origin)}</div>
+    <div class="card-tags">${tags.map(t=>`<span class="tag-pill" style="background:${tagColor(t)}">${escapeHtml(t)}</span>`).join('')}${(p.tags||[]).length>3 ? `<span class="tag-pill" style="background:#4A4F49">+${p.tags.length-3}</span>` : ''}</div>
+  </div>`;
+}
+
+function escapeHtml(s){
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+// ---------- Detail view ----------
+function openDetail(id){
+  const p = profiles.find(x=>x.id===id);
+  if(!p) return;
+  const body = document.getElementById('detailBody');
+  const avatarHtml = p.photo
+    ? `<img class="detail-avatar" src="${p.photo}" alt="">`
+    : `<div class="detail-avatar" style="background:${avatarColor(p.name)}">${initials(p.name)}</div>`;
+  const fixedFields = `<div class="field-item"><div class="field-label">Branch</div><div class="field-value">${escapeHtml(p.branch)}</div></div>
+    <div class="field-item"><div class="field-label">Place of origin</div><div class="field-value">${escapeHtml(p.origin)}</div></div>`;
+  const contactItems = [];
+  if(p.phone) contactItems.push(`<div class="contact-item"><span class="ci-label">Phone</span>${escapeHtml(p.phone)}</div>`);
+  if(p.instagram) contactItems.push(`<div class="contact-item"><span class="ci-label">Instagram</span>${escapeHtml(p.instagram)}</div>`);
+  if(p.email) contactItems.push(`<div class="contact-item"><span class="ci-label">Email</span>${escapeHtml(p.email)}</div>`);
+  body.innerHTML = `
+    ${avatarHtml}
+    <div class="detail-name">${escapeHtml(p.name)}</div>
+    <div class="detail-meta">${p.favorite ? '★ FAVORITE · ' : ''}ADDED ${new Date(p.createdAt).toLocaleDateString(undefined,{month:'short',day:'numeric',year:'numeric'})}</div>
+    <div class="detail-tags">${(p.tags||[]).map(t=>`<span class="tag-pill" style="background:${tagColor(t)}; font-size:11px; padding:4px 10px;">${escapeHtml(t)}</span>`).join('') || '<span style="color:var(--text-muted); font-size:12.5px;">No tags yet</span>'}</div>
+    ${p.description ? `<div class="detail-description">${escapeHtml(p.description)}</div>` : ''}
+    ${contactItems.length ? `<div class="contact-row">${contactItems.join('')}</div>` : ''}
+    <div class="field-list">
+      ${fixedFields}
+      ${(p.fields||[]).map(f=>`<div class="field-item"><div class="field-label">${escapeHtml(f.label)}</div><div class="field-value">${escapeHtml(f.value)}</div></div>`).join('')}
+    </div>
+    <div class="detail-actions">
+      <button class="btn btn-outline" onclick="openForm('${p.id}')">Edit</button>
+      <button class="btn btn-primary" onclick="quickToggleFav('${p.id}')">${p.favorite ? '★ Unfavorite' : '☆ Favorite'}</button>
+    </div>
+    <button class="btn btn-danger" style="width:100%; margin-top:10px;" onclick="deleteProfile('${p.id}')">Delete profile</button>
+  `;
+  document.getElementById('detailOverlay').classList.add('open');
+}
+function quickToggleFav(id){
+  const p = profiles.find(x=>x.id===id);
+  if(!p) return;
+  p.favorite = !p.favorite;
+  saveData();
+  openDetail(id);
+  render();
+}
+function deleteProfile(id){
+  if(!confirm('Delete this profile? This can\'t be undone.')) return;
+  profiles = profiles.filter(x=>x.id!==id);
+  saveData();
+  closeOverlay('detailOverlay');
+  render();
+}
+function closeOverlay(id){ document.getElementById(id).classList.remove('open'); }
+
+// ---------- Form ----------
+function openForm(id){
+  editingId = id || null;
+  const p = editingId ? profiles.find(x=>x.id===editingId) : null;
+  draftFields = p ? JSON.parse(JSON.stringify(p.fields||[])) : [];
+  draftTags = p ? [...(p.tags||[])] : [];
+  draftPhoto = p ? (p.photo || null) : null;
+  document.getElementById('formTitle').textContent = editingId ? 'Edit Person' : 'Add Person';
+  const body = document.getElementById('formBody');
+  body.innerHTML = `
+    <div class="form-group">
+      <label class="form-label">Photo</label>
+      <div class="photo-upload-row" id="photoUploadRow"></div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Name <span class="required-star">*</span></label>
+      <input class="form-input" id="fName" placeholder="e.g. Aditi Nair" value="${p ? escapeHtml(p.name) : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Branch <span class="required-star">*</span></label>
+      <input class="form-input" id="fBranch" placeholder="e.g. Computer Science" value="${p ? escapeHtml(p.branch||'') : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Place of origin <span class="required-star">*</span></label>
+      <input class="form-input" id="fOrigin" placeholder="e.g. Kochi, Kerala" value="${p ? escapeHtml(p.origin||'') : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea class="form-textarea" id="fDescription" placeholder="A few lines about them — how you met, what they're like…">${p ? escapeHtml(p.description||'') : ''}</textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Phone number <span style="opacity:0.6;">(if available)</span></label>
+      <input class="form-input" id="fPhone" type="tel" placeholder="e.g. +91 98765 43210" value="${p ? escapeHtml(p.phone||'') : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Instagram ID <span style="opacity:0.6;">(if available)</span></label>
+      <input class="form-input" id="fInstagram" placeholder="e.g. @username" value="${p ? escapeHtml(p.instagram||'') : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Email <span style="opacity:0.6;">(if available)</span></label>
+      <input class="form-input" id="fEmail" type="email" placeholder="e.g. name@example.com" value="${p ? escapeHtml(p.email||'') : ''}">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Tags <span style="opacity:0.6;">(press enter to add)</span></label>
+      <div class="tag-input-row" id="tagInputRow">
+        <input id="tagInput" placeholder="e.g. Extrovert, Hostel C…" onkeydown="handleTagKey(event)">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Other custom details</label>
+      <div id="fieldsWrap"></div>
+      <button type="button" class="add-field-btn" onclick="addFieldRow()">+ Add a field (e.g. Personality, How we met)</button>
+    </div>
+    <div class="form-group">
+      <div class="fav-toggle" onclick="toggleDraftFav()">
+        <span>Mark as favorite</span>
+        <div class="switch ${p&&p.favorite?'on':''}" id="favSwitch"></div>
+      </div>
+    </div>
+    <button class="btn btn-primary" style="width:100%; padding:14px;" onclick="saveProfile()">${editingId ? 'Save changes' : 'Add to index'}</button>
+  `;
+  document.getElementById('favSwitch').dataset.on = (p && p.favorite) ? '1' : '0';
+  renderPhotoUpload();
+  renderTagChipsInForm();
+  renderFieldRows();
+  document.getElementById('formOverlay').classList.add('open');
+}
+
+function renderPhotoUpload(){
+  const row = document.getElementById('photoUploadRow');
+  const preview = draftPhoto
+    ? `<img class="photo-preview" src="${draftPhoto}" alt="">`
+    : `<div class="photo-preview-fallback" style="background:${avatarColor(document.getElementById('fName') ? (document.getElementById('fName').value||'?') : '?')}">${initials(document.getElementById('fName') ? (document.getElementById('fName').value||'') : '')}</div>`;
+  row.innerHTML = `
+    ${preview}
+    <div class="photo-btns">
+      <label class="photo-file-label">${draftPhoto ? 'Change photo' : 'Upload photo'}
+        <input type="file" accept="image/*" style="display:none;" onchange="handlePhotoSelect(event)">
+      </label>
+      ${draftPhoto ? `<button type="button" class="photo-remove-btn" onclick="removeDraftPhoto()">Remove photo</button>` : ''}
+    </div>
+  `;
+}
+function handlePhotoSelect(e){
+  const file = e.target.files[0];
+  if(!file) return;
+  const img = new Image();
+  const reader = new FileReader();
+  reader.onload = function(ev){
+    img.onload = function(){
+      const maxDim = 320;
+      let w = img.width, h = img.height;
+      if(w > h && w > maxDim){ h = Math.round(h * maxDim / w); w = maxDim; }
+      else if(h > maxDim){ w = Math.round(w * maxDim / h); h = maxDim; }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      draftPhoto = canvas.toDataURL('image/jpeg', 0.75);
+      renderPhotoUpload();
+    };
+    img.src = ev.target.result;
+  };
+  reader.readAsDataURL(file);
+}
+function removeDraftPhoto(){ draftPhoto = null; renderPhotoUpload(); }
+function toggleDraftFav(){
+  const sw = document.getElementById('favSwitch');
+  const on = sw.dataset.on === '1';
+  sw.dataset.on = on ? '0' : '1';
+  sw.classList.toggle('on', !on);
+}
+function handleTagKey(e){
+  if(e.key === 'Enter'){
+    e.preventDefault();
+    const val = e.target.value.trim().replace(/,$/,'');
+    if(val && !draftTags.includes(val)){ draftTags.push(val); }
+    e.target.value = '';
+    renderTagChipsInForm();
+  }
+}
+function renderTagChipsInForm(){
+  const row = document.getElementById('tagInputRow');
+  const input = document.getElementById('tagInput');
+  const chips = draftTags.map((t,i)=>`<span class="tag-chip-editable" style="background:${tagColor(t)}">${escapeHtml(t)}<button type="button" onclick="removeDraftTag(${i})">×</button></span>`).join('');
+  row.innerHTML = chips + '<input id="tagInput" placeholder="e.g. CSE, Extrovert…" onkeydown="handleTagKey(event)">';
+}
+function removeDraftTag(i){ draftTags.splice(i,1); renderTagChipsInForm(); }
+
+function addFieldRow(){ draftFields.push({label:'', value:''}); renderFieldRows(); }
+function renderFieldRows(){
+  const wrap = document.getElementById('fieldsWrap');
+  wrap.innerHTML = draftFields.map((f,i)=>`
+    <div class="field-row">
+      <input class="form-input" placeholder="Label (e.g. Branch)" value="${escapeHtml(f.label)}" oninput="draftFields[${i}].label=this.value">
+      <input class="form-input" placeholder="Value (e.g. Mechanical Eng.)" value="${escapeHtml(f.value)}" oninput="draftFields[${i}].value=this.value">
+      <button type="button" class="rm-field" onclick="removeFieldRow(${i})">×</button>
+    </div>
+  `).join('');
+}
+function removeFieldRow(i){ draftFields.splice(i,1); renderFieldRows(); }
+
+function saveProfile(){
+  const name = document.getElementById('fName').value.trim();
+  const branch = document.getElementById('fBranch').value.trim();
+  const origin = document.getElementById('fOrigin').value.trim();
+  if(!name){ alert('Please enter a name.'); return; }
+  if(!branch){ alert('Branch is required.'); return; }
+  if(!origin){ alert('Place of origin is required.'); return; }
+  const description = document.getElementById('fDescription').value.trim();
+  const phone = document.getElementById('fPhone').value.trim();
+  const instagram = document.getElementById('fInstagram').value.trim();
+  const email = document.getElementById('fEmail').value.trim();
+  const tagInputVal = document.getElementById('tagInput').value.trim();
+  if(tagInputVal && !draftTags.includes(tagInputVal)) draftTags.push(tagInputVal);
+  const favorite = document.getElementById('favSwitch').dataset.on === '1';
+  const cleanFields = draftFields.filter(f => f.label.trim() || f.value.trim());
+
+  if(editingId){
+    const p = profiles.find(x=>x.id===editingId);
+    p.name = name; p.branch = branch; p.origin = origin; p.description = description;
+    p.phone = phone; p.instagram = instagram; p.email = email;
+    p.tags = draftTags; p.fields = cleanFields; p.favorite = favorite; p.photo = draftPhoto;
+  } else {
+    profiles.push({ id: uid(), name, branch, origin, description, phone, instagram, email, tags: draftTags, fields: cleanFields, favorite, photo: draftPhoto, createdAt: Date.now() });
+  }
+  saveData();
+  closeOverlay('formOverlay');
+  closeOverlay('detailOverlay');
+  render();
+}
+
+// ---------- Stats ----------
+function renderStats(){
+  const content = document.getElementById('content');
+  const total = profiles.length;
+  const favs = profiles.filter(p=>p.favorite).length;
+  const tagCounts = {};
+  profiles.forEach(p => (p.tags||[]).forEach(t => tagCounts[t] = (tagCounts[t]||0)+1));
+  const sorted = Object.entries(tagCounts).sort((a,b)=>b[1]-a[1]);
+  const max = sorted.length ? sorted[0][1] : 1;
+
+  content.innerHTML = `
+    <div class="stat-cards">
+      <div class="stat-card"><div class="stat-num">${total}</div><div class="stat-label">People tracked</div></div>
+      <div class="stat-card"><div class="stat-num">${favs}</div><div class="stat-label">Favorites</div></div>
+    </div>
+    <div class="section-label">Breakdown by tag</div>
+    ${sorted.length === 0 ? '<div class="empty-state" style="padding:30px 10px;"><p>Add tags to your profiles to see breakdowns here.</p></div>' :
+      sorted.map(([t,c])=>`
+        <div class="bar-row">
+          <div class="bar-top"><span class="tname">${escapeHtml(t)}</span><span>${c}</span></div>
+          <div class="bar-track"><div class="bar-fill" style="width:${(c/max)*100}%; background:${tagColor(t)}"></div></div>
+        </div>
+      `).join('')
+    }
+  `;
+}
+
+// ---------- Init ----------
+loadData();
+
+// ---------- PWA installability: manifest + service worker ----------
+// Built dynamically (as Blob URLs) so the whole app stays one portable file
+// while still meeting the browser's real install criteria.
+(function setupPWA(){
+  try{
+    const iconSvg = "<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'>" +
+      "<rect width='100' height='100' rx='22' fill='%231C2321'/>" +
+      "<text x='50' y='68' font-size='54' font-family='Georgia,serif' fill='%23D9A441' text-anchor='middle'>V</text></svg>";
+    const iconDataUri = "data:image/svg+xml," + encodeURIComponent(iconSvg.replace(/%23/g,'#'));
+
+    const manifest = {
+      name: "Les Connexions de Voltz",
+      short_name: "Voltz",
+      description: "Your personal campus index — track the people you meet in college.",
+      start_url: ".",
+      scope: ".",
+      display: "standalone",
+      background_color: "#1C2321",
+      theme_color: "#1C2321",
+      orientation: "portrait",
+      icons: [
+        { src: iconDataUri, sizes: "192x192", type: "image/svg+xml", purpose: "any" },
+        { src: iconDataUri, sizes: "512x512", type: "image/svg+xml", purpose: "any" },
+        { src: iconDataUri, sizes: "512x512", type: "image/svg+xml", purpose: "maskable" }
+      ]
+    };
+    const manifestBlob = new Blob([JSON.stringify(manifest)], { type: 'application/manifest+json' });
+    const manifestUrl = URL.createObjectURL(manifestBlob);
+    const link = document.createElement('link');
+    link.rel = 'manifest';
+    link.href = manifestUrl;
+    document.head.appendChild(link);
+
+    if('serviceWorker' in navigator){
+      const swSource = `
+        self.addEventListener('install', e => self.skipWaiting());
+        self.addEventListener('activate', e => self.clients.claim());
+        self.addEventListener('fetch', e => {
+          e.respondWith(fetch(e.request).catch(() => caches.match(e.request)));
+        });
+      `;
+      const swBlob = new Blob([swSource], { type: 'application/javascript' });
+      const swUrl = URL.createObjectURL(swBlob);
+      navigator.serviceWorker.register(swUrl).catch(err => {
+        console.warn('Service worker registration skipped:', err.message);
+      });
+    }
+  }catch(err){
+    console.warn('PWA setup skipped:', err.message);
+  }
+})();
+</script>
+</body>
+</html>
